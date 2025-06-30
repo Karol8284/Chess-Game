@@ -1,0 +1,21 @@
+﻿@page "/"
+
+<PageTitle>Home</PageTitle>
+
+<h1>Hello, world!</h1>
+
+Welcome to your new app.
+
+@code{
+    [Inject]
+    private NavigationManager navigation { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        // You can perform any initialization logic here.
+        navigation.NavigateTo("/creator-chess-game");
+    }
+
+
+
+}

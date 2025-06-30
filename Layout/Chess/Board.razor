@@ -1,0 +1,153 @@
+﻿@using global::Chess
+
+<style>
+    .chess-board-table {
+        border-collapse: collapse;
+        table-layout: fixed;
+    }
+
+    .square {
+        width: 80pt;
+        height: 80pt;
+        max-width: 80pt;
+        max-height: 80pt;
+        border: 3pt solid black;
+    }
+    .square-white{
+        background-color: #f0d9b5;
+    }
+    .square-dark{
+        background-color: #b58863;
+
+    }
+
+    .square img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+    }
+    /* .selected-square {
+        background-color: rgba(89, 65, 86, 0.39) !important;
+    } */
+
+    .chess-board-table {
+        width: 100%;
+        max-width: 640px;
+        margin: auto;
+    }
+
+    .square {
+        width: 12.5%;
+        height: 0;
+        padding-bottom: 12.5%; /* robi kwadrat */
+        position: relative;
+    }
+
+    .chess-board-table {
+        border-collapse: collapse;
+        table-layout: fixed;
+    }
+
+        .square img {
+            position: absolute;
+            width: 90%;
+            height: 90%;
+            top: 5%;
+            left: 5%;
+            object-fit: contain;
+        }
+</style>
+@* 
+<h3>Board @curentColor</h3>
+<h3>Selected Piece: @selectedSquare</h3> *@
+
+<table class="chess-board-table">   
+    @if (curentColor == PieceColor.White)
+    {
+        @for (int row = 8; row >= 1; row--)
+        {
+            <tr>
+                @for (char col = 'a'; col <= 'h'; col++)
+                {
+                    string squareName = $"{col}{row}";
+
+                    Piece piece = board[squareName];
+                    string className = piece?.Color == PieceColor.White ? "square-white" : "square-dark";
+                    string imageUrl = ReturnPionUrl(piece);
+                    <td class="square @(selectedSquare == squareName ? "selected-square" : className)"
+                    @onclick="() => { SelectSquare(squareName); squareNameClick.InvokeAsync(squareName); }">
+                        @if (piece != null)
+                        {
+                            <img width="80pt" height="80pt" src="@ReturnPionUrl(piece)" alt="Error in loading image" />
+                            @* <span @onclick="SquareClick">@square.Type.Name</span> *@
+                            @* <p>@piece.Type.Name</p> *@
+                        }
+                    </td>
+                }
+            </tr>
+        }
+    }
+    else
+    {
+        @for (int row = 1; row <= 8; row++)
+        {
+            <tr>
+                @for (char col = 'h'; col >= 'a'; col--)
+                {
+                    string squareName = $"{col}{row}";
+
+                    Piece piece = board[squareName];
+                    string className = piece?.Color == PieceColor.White ? "square-white" : "square-dark";
+                    string imageUrl = ReturnPionUrl(piece);
+                    <td class="square @(selectedSquare == squareName ? "selected-square" : className)"
+                        @onclick="() => { SelectSquare(squareName); squareNameClick.InvokeAsync(squareName); }">
+                        @if (piece != null)
+                        {
+                            <img src="@ReturnPionUrl(piece)" alt="Error in loading image" />
+                            @* <span @onclick="SquareClick">@square.Type.Name</span> *@
+                            @* <p>@piece.Type.Name</p> *@
+                        }
+                    </td>
+                }
+            </tr>
+        }
+    }
+</table>
+
+@code {
+    [Parameter]
+    public bool endGame { get; set; }
+    [Parameter]
+    public ChessBoard board { get; set; }
+    [Parameter]
+    public PieceColor curentColor { get; set; }
+
+    [Parameter]
+    public EventCallback<string> squareNameClick { get; set; }
+
+    // private List<Piece> pieceList;
+
+    private string selectedSquare;
+
+    protected override void OnInitialized()
+    {
+        selectedSquare = "";
+        // pieceList = board.MoveIndex;
+    }
+    private string ReturnPionUrl(Piece piece)
+    {
+        if (piece == null) return "/chess-pieces-models/Chess_tile_xo.svg"; // Obrazek dla pustych pól
+        //return $"/chess-pieces-models/{(piece.Color == PieceColor.White ? "white-" : "black-")}{piece.Type.Name.ToLower()}.svg";
+        return $"/chess-pieces-models/{piece.Type.Name.ToLower()}{(piece.Color == PieceColor.White ? "-w" : "-b")}.svg";
+    }
+    private void SelectSquare(string squareName)
+    {
+        selectedSquare = squareName;
+        Console.WriteLine($"Zaznaczone pole: {selectedSquare}");
+        if (!endGame)
+        {
+            StateHasChanged();
+        }
+        squareName = null;
+    }
+}

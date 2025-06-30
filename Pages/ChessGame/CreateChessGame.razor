@@ -1,0 +1,129 @@
+﻿@page "/creator-chess-game"
+@using ChessBlazorWebApp.Logic.Comunication
+@using System.Text.Json
+
+<h3>ChessGameCreator</h3>
+<style>
+    chess-game-creator {
+        margin: 15pt
+    }
+
+</style>
+
+
+<h1>Przekazywanie dalej czasu z int => Time </h1>
+<h1>Dodanie czas, odliczanie, dodawanie.  </h1>
+
+<div class="chess-game-creator">
+        <div class="input-group mb-3">
+        <label class="input-group-text" for="inputGroupSelect01">Color: </label>
+        <select class="form-select" @bind="SelectedColor">
+                <option selected>Choose Color...</option>
+            <option value="White">White</option>
+            <option value="Black">Black</option>
+            </select>
+        </div>
+
+
+    <div class="input-group mb-3">
+        <label>Time:</label>
+        <input @bind="SelectedTime" type="number" class="form-control" id="numberInput" min="1" width="100pt">
+        <select class="form-select" @bind="SelectedTimeFormat" width="30pt">
+            <option selected>time</option>
+            <option value="s">s</option>
+            <option value="m">min</option>
+            <option value="h">h</option>
+        </select>
+    </div>
+    <div class="input-group mb-3">
+        <label>Add Time:</label>
+        <input @bind="SelectedAddTime" type="number" class="form-control" id="numberInput" min="1" width="100pt">
+        <select class="form-select" @bind="SelectedAddTimeFormat" width="30pt">
+            <option selected>time</option>
+            <option value="s">s</option>
+            <option value="m">min</option>
+            <option value="h">h</option>
+        </select>
+    </div>
+    <div class="form-check form-switch">
+        <input class="form-check-input" type="checkbox" value="" @bind="SelectedSwapSides" id="checkNativeSwitch" switch>
+        <label class="form-check-label" for="checkNativeSwitch">
+            Swaping color
+        </label>
+    </div>
+
+    <button type="button" @onclick="CreateGame" class="btn btn-secondary">Create Game</button>
+
+        @*     <div class="input-group mb-3">
+                <label>Time:</label>
+                <input type="range" TValue="int" Min="0" Max="86400" @bind="SelectedTime">
+                    @* <SliderTicks Placement="Placement.Before" LargeStep="3600000" SmallStep="60000" ShowSmallTicks="true"></SliderTicks>
+                    <SliderTooltip Placement="TooltipPlacement.After" IsVisible="true"></SliderTooltip> 
+                    <SliderTicks Placement="Placement.Before" LargeStep="3600" SmallStep="60" ShowSmallTicks="true"></SliderTicks>
+                    <SliderTooltip Placement="TooltipPlacement.After" IsVisible="true"></SliderTooltip>
+  
+                </input>
+            <p class="h3">@FormatTime(SelectedTime)</p>
+            </div>
+            <div class="input-group mb-3">
+            <label>Incremental Time:</label>
+            <input type="range" TValue="int" Min="0" Max="3600" @bind="SelectedAddTime">
+            <SliderTicks Placement="Placement.Before" LargeStep="600" SmallStep="60" ShowSmallTicks="true"></SliderTicks>
+            <SliderTooltip Placement="TooltipPlacement.After" IsVisible="true"></SliderTooltip>
+            <p class="h3">@FormatTime(SelectedAddTime)</p>
+        </div> *@
+
+
+
+</div>
+
+@code {
+    [Inject] private NavigationManager navigation { get; set; }
+    [Inject] private IJSRuntime JS { get; set; }
+    private string SelectedColor { get; set; }
+    private int SelectedTime { get; set; } = 15;
+    private char SelectedTimeFormat { get; set; } = 's';
+    private int SelectedAddTime { get; set; } = 5;
+    private char SelectedAddTimeFormat { get; set; } = 's';
+
+    private bool SelectedSwapSides { get; set; }
+    private WebSocketClient _webSocketClient = new();
+
+    private async Task ConnectToServer()
+    {
+        await _webSocketClient.ConnectAsync("ws://127.0.0.1:8282");
+    }
+    private async Task SendMessage(string data)
+    {
+        await _webSocketClient.SendMessageAsync("Hello from Blazor!");
+    }
+    private async Task CreateGame()
+    {
+        
+        await SetUserData();
+        navigation.NavigateTo("/chess-game");
+        
+        // string stringData = "{Color: " + " Time: " + SelectedTime + " TimeFormat: " + SelectedTimeFormat.ToString() + " AddTime: " + SelectedAddTime + " AddTimeFormat: " + SelectedAddTimeFormat.ToString() + "}";
+        // await SetGameCookie(stringData);
+        //await ConnectToServer();
+        //await SendMessage(stringData);
+        // navigation.NavigateTo($"/chess-game?color={SelectedColor}&time={SelectedTime}&addTime={SelectedAddTime}");
+    }   
+    private async Task SetUserData()
+    {
+        // await JS.InvokeVoidAsync("eval", $"document.cookie = userData = {value}; path=/");
+
+        await JS.InvokeVoidAsync("localStorage.setItem", "gameSettings", JsonSerializer.Serialize(new
+        {
+            Color = SelectedColor,
+            Time = SelectedTime,
+            AddTime = SelectedAddTime,
+            SwapSides = SelectedSwapSides
+
+        }));
+    }
+    private async Task SetGameCookie(string value)
+    {
+        await JS.InvokeVoidAsync("eval", $"document.cookie = userData = {value}; path=/chess-game'");
+    }
+}

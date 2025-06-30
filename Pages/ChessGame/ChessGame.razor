@@ -1,0 +1,160 @@
+﻿@page "/chess-game"
+@using Chess;
+@using System.Text.Json
+@using ChessBlazorWebApp.Layout.Chess
+@* 
+<h3>ChessGame</h3>
+
+<h3> player move</h3> *@
+
+<style>
+    .pulpit{
+        box-shadow: 0 0 10px 3px rgba(44, 67, 70, 0.8);
+    }
+</style>
+
+@if(endGameInfo != null)
+{
+    <p class="h2">@endGameInfo.WonSide</p>
+    <p class="h3">@endGameInfo.EndgameType</p>
+}
+    <div class="position-relative">
+    <ChessBlazorWebApp.Layout.Chess.Board endGame="@(endGameInfo == null)" board=board curentColor=currentTurn squareNameClick="MakeMove" />
+    </div>
+
+<div class="pulpit position-absolute top-50 end-0 translate-middle-y margin-7pt bg-light p-2 border rounded shadow">
+    <p class="h5 fw-bold">@Color Turn</p>
+    <p class="h6">White Time: @WhiteTime</p>
+    <p class="h6">Black Time: @BlackTime</p>
+</div>
+
+<h3>@ErrorMessage</h3>
+
+@code {
+    [Parameter]
+    public string Color { get; set; }
+    [Parameter]
+    public double Time { get; set; }
+    [Parameter]
+    public int TimeAdd { get; set; }
+    [Parameter]
+    public bool SwapSides { get; set; }
+    [Inject] private IJSRuntime JS { get; set; }
+    // public string playerColor { get; set; }
+    public double time { get; set; }
+    public int timeAdd { get; set; }
+
+    public ChessBoard board { get; set; } = new();
+    private Move move;
+
+    private string selectedSquare = null;
+    private string ErrorMessage;
+
+    private bool gameEnded = false;
+    private string WinnerColor;
+    private EndGameInfo endGameInfo { get; set; } = null;
+    private PieceColor currentTurn = PieceColor.White;
+
+    private TimeOnly WhiteTime { get; set; } = new TimeOnly(0, 0, 0);
+    private TimeOnly BlackTime { get; set; } = new TimeOnly(0, 0, 0);
+
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        var json = await JS.InvokeAsync<string>("localStorage.getItem", "gameSettings");
+        if (!string.IsNullOrEmpty(json))
+        {
+            var settings = JsonSerializer.Deserialize<GameSettings>(json);
+            Color = settings.Color;
+            Time = settings.Time;
+            TimeAdd = settings.AddTime;
+            SwapSides = settings.SwapSides;
+
+            Console.WriteLine($"$$$ json: {json}");
+            Console.WriteLine($"$$$ Color: {Color}");
+            Console.WriteLine($"$$$ Time: {Time}");
+            Console.WriteLine($"$$$ TimeAdd: {TimeAdd}");
+            Console.WriteLine($"$$$ SwapSides: {SwapSides}");
+
+            // WhiteTime = Time;
+            // WhiteTime = Time;
+        }
+        else
+        {
+            Console.WriteLine($"$$$ json: {json}");
+        }
+    }
+
+    // protected override async Task OnInitializedAsync()
+    // {
+    //     var uri = navigation.ToAbsoluteUri(navigation.Uri);
+    //     var queryParams = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(uri.Query);
+    //     if (queryParams.TryGetValue("color", out var color))
+    //     {
+    //         Ustaw kolor gracza
+    //     }
+    // }
+
+    private async Task SetGameCookie(Piece piece)
+    {
+    }
+    private async Task GetCookieData(string name)
+    {
+        var gameCookie = await JS.InvokeAsync<string>("eval", "document.cookie");
+
+    }
+
+    private async Task MakeMove(string squareName)
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(squareName))
+            {
+                ErrorMessage = "Square cannot be null.";
+            }else
+            if (selectedSquare == null)
+            {
+                selectedSquare = squareName;
+                return;
+            }
+            else
+            {
+                move = new Move(selectedSquare, squareName);
+                if (board.IsValidMove(move))
+                {
+                    board.Move(move);
+                    ErrorMessage = "All is OK";
+
+
+
+
+                    if (board.IsEndGame)
+                    {
+                        endGameInfo = board.EndGame;
+                        gameEnded = true;
+                    }
+                    if (SwapSides) SwitchTurn();
+                }
+                else
+                {
+                    string whyMoveNotValid = "";
+                    if (board.WhiteKingChecked == true) whyMoveNotValid += " WhiteKingChecked, ";
+                    if (board.BlackKingChecked == true) whyMoveNotValid += " BlackKingChecked, ";
+                }
+                
+            }
+            selectedSquare = null;
+            return;
+        }catch (Exception ex)
+        {
+            ErrorMessage = ex.Message;
+        }
+
+        // await JS.InvokeVoidAsync("eval", $"document.cookie = '{name}={value}; path=/'"); 
+    }
+    private void SwitchTurn()
+    {
+        currentTurn = currentTurn == PieceColor.White ? PieceColor.Black : PieceColor.White;
+    }
+}
